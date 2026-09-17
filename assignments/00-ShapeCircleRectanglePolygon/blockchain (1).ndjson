@@ -1,0 +1,10 @@
+{"tipo":"bloque","height":0,"prev_hash":"0000000000000000","block_hash":"a3f9c2e1b5d84710","tx_count":2}
+  {"tipo":"tx","tx_id":"tx001","operacion":"CREATE","id_alumno":"A001","actividad":"ACT01","calificacion":8.5,"marca_tiempo":1000}
+  {"tipo":"tx","tx_id":"tx002","operacion":"CREATE","id_alumno":"A002","actividad":"ACT01","calificacion":9.0,"marca_tiempo":1010}
+{"tipo":"bloque","height":1,"prev_hash":"a3f9c2e1b5d84710","block_hash":"b7d1e5f2c3a94821","tx_count":2}
+  {"tipo":"tx","tx_id":"tx003","operacion":"UPDATE","id_alumno":"A001","actividad":"ACT01","calificacion":9.2,"marca_tiempo":1020}
+  {"tipo":"tx","tx_id":"tx004","operacion":"CREATE","id_alumno":"A003","actividad":"ACT02","calificacion":7.8,"marca_tiempo":1030}
+{"tipo":"bloque","height":2,"prev_hash":"b7d1e5f2c3a94821","block_hash":"c9e3f1d2a4b75932","tx_count":3}
+  {"tipo":"tx","tx_id":"tx005","operacion":"CREATE","id_alumno":"A004","actividad":"ACT02","calificacion":10.0,"marca_tiempo":1040}
+  {"tipo":"tx","tx_id":"tx006","operacion":"VOID","id_alumno":"A002","actividad":"ACT01","calificacion":0.0,"marca_tiempo":1050}
+  {"tipo":"tx","tx_id":"tx007","operacion":"CREATE","id_alumno":"A005","actividad":"ACT03","calificacion":8.0,"marca_tiempo":1060}

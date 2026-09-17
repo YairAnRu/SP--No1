@@ -1,0 +1,3 @@
+{"tipo":"bloque","height":0,"prev_hash":"0000000000000000","block_hash":"a3f9c2e1b5d84710","tx_count":2,"ejemplo":1}
+  {"tipo":"tx","tx_id":"tx001","operacion":"CREATE","id_alumno":"A001","actividad":"ACT01","calificacion":8.5,"marca_tiempo":1000,"seccion":"a"}
+  {"tipo":"tx","tx_id":"tx002","operacion":"CREATE","id_alumno":"A002","actividad":"ACT01","calificacion":9.0,"marca_tiempo":1010,"seccion":"b"}
