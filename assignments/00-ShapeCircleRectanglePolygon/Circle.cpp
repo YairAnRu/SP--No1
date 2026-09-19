@@ -2,145 +2,105 @@
 
 #include <iostream>
 #include <fstream>
-#include <cstring>
-#include <cstdlib>
-
-const int MAX_LINEA = 512;
-
-void extraerCampo(const char* linea, const char* campo, char* destino, int maxDest) {
-    char patron[64];
-    strcpy(patron, "\"");
-    strcat(patron, campo);
-    strcat(patron, "\":");
-
-    const char* pos = strstr(linea, patron);
-    if (pos == nullptr) {
-        strcpy(destino, "?");
-        return;
-    }
+#include <string>
 
 
-    pos += strlen(patron);
+std::string extraerCampo(const std::string& linea, const std::string& clave) {
+    std::string patron = "\"" + clave + "\":";
+    size_t pos = linea.find(patron);
+    if (pos == std::string::npos) return "?";
 
-    while (*pos == ' ') pos++;
+    pos += patron.size();
+    while (pos < linea.size() && linea[pos] == ' ') pos++;
 
-    if (*pos == '"') {
+    if (linea[pos] == '"') {
         pos++;
-        int i = 0;
-        while (*pos != '"' && *pos != '\0' && i < maxDest - 1) {
-            destino[i++] = *pos++;
-        }
-        destino[i] = '\0';
-    } else {
-        int i = 0;
-        while (*pos != ',' && *pos != '}' && *pos != '\0' && i < maxDest - 1) {
-            destino[i++] = *pos++;
-        }
-        destino[i] = '\0';
+        size_t fin = linea.find('"', pos);
+        return linea.substr(pos, fin - pos);
     }
+
+    size_t fin = linea.find_first_of(",}", pos);
+    return linea.substr(pos, fin - pos);
 }
 
 int main(int argc, char* argv[]) {
-    const char* nombreArchivo = (argc > 1) ? argv[1] : "blockchain1.ndjson";
+    std::string nombreArchivo = (argc > 1) ? argv[1] : "blockchain.ndjson";
 
     std::ifstream archivo(nombreArchivo);
     if (!archivo.is_open()) {
-        std::cerr << "Error: no se pudo abrir el archivo '"
-                  << nombreArchivo << "'" << std::endl;
+        std::cerr << "Error: no se pudo abrir el archivo '" << nombreArchivo << "'\n";
         return 1;
     }
 
-    char linea[MAX_LINEA];
-    char campo[128];
+    std::string linea;
     int numBloque = 0;
-    int numTx     = 0;
+    int numTx = 0;
     bool dentroDeBloque = false;
+    std::string hashDelBloqueAnterior = "";
 
-    std::cout << "=====================================" << std::endl;
-    std::cout << "  Contenido del registro blockchain  " << std::endl;
-    std::cout << "=====================================" << std::endl;
+    std::cout << "=====================================\n";
+    std::cout << "  Contenido del registro blockchain  \n";
+    std::cout << "=====================================\n";
 
-    while (archivo.getline(linea, MAX_LINEA)) {
-        if (strlen(linea) == 0) continue;
+    while (std::getline(archivo, linea)) {
+        if (linea.empty()) continue; 
 
-       
         if (linea[0] == '{') {
-        
             numBloque++;
             numTx = 0;
 
-            extraerCampo(linea, "height",     campo, sizeof(campo));
-            int height = atoi(campo);
+            std::string height    = extraerCampo(linea, "height");
+            std::string prevHash  = extraerCampo(linea, "prev_hash");
+            std::string blockHash = extraerCampo(linea, "block_hash");
+            std::string txCount   = extraerCampo(linea, "tx_count");
+            std::string ejemplo   = extraerCampo(linea, "ejemplo"); 
+            std::cout << "\n-------------------------------------\n";
+            std::cout << "BLOQUE #" << height << "\n";
+            std::cout << "  prev_hash  : " << prevHash  << "\n";
+            std::cout << "  block_hash : " << blockHash << "\n";
+            std::cout << "  tx_count   : " << txCount   << "\n";
+            if (ejemplo != "?") {
+                std::cout << "  ejemplo    : " << ejemplo << "\n";
+            }
 
-            extraerCampo(linea, "prev_hash",  campo, sizeof(campo));
-            char prevHash[128];
-            strcpy(prevHash, campo);
+            if (numBloque == 1) {
+                std::cout << "  encadenamiento: (primer bloque, nada que comparar)\n";
+            } else if (prevHash == hashDelBloqueAnterior) {
+                std::cout << "  encadenamiento: OK\n";
+            } else {
+                std::cout << "  encadenamiento: NO COINCIDE\n";
+            }
+            hashDelBloqueAnterior = blockHash;
 
-            extraerCampo(linea, "block_hash", campo, sizeof(campo));
-            char blockHash[128];
-            strcpy(blockHash, campo);
-
-            extraerCampo(linea, "tx_count",   campo, sizeof(campo));
-            int txCount = atoi(campo);
-
-            // Campo agregado al encabezado del bloque
-            extraerCampo(linea, "ejemplo",   campo, sizeof(campo));
-            int nuEjemplo = atoi(campo);
-
-            std::cout << std::endl;
-            std::cout << "-------------------------------------" << std::endl;
-            std::cout << "BLOQUE #" << height << std::endl;
-            std::cout << "  prev_hash  : " << prevHash  << std::endl;
-            std::cout << "  block_hash : " << blockHash << std::endl;
-            std::cout << "  tx_count   : " << txCount   << std::endl;
-            std::cout << "  ejemplo   : " << nuEjemplo   << std::endl;
-            std::cout << "  Transacciones:" << std::endl;
-
+            std::cout << "  Transacciones:\n";
             dentroDeBloque = true;
 
         } else if (linea[0] == ' ' && dentroDeBloque) {
             numTx++;
 
-            extraerCampo(linea, "tx_id",       campo, sizeof(campo));
-            char txId[64];
-            strcpy(txId, campo);
-
-            extraerCampo(linea, "operacion",   campo, sizeof(campo));
-            char operacion[32];
-            strcpy(operacion, campo);
-
-            extraerCampo(linea, "id_alumno",   campo, sizeof(campo));
-            char idAlumno[32];
-            strcpy(idAlumno, campo);
-
-            extraerCampo(linea, "actividad",   campo, sizeof(campo));
-            char actividad[32];
-            strcpy(actividad, campo);
-
-            extraerCampo(linea, "calificacion", campo, sizeof(campo));
-            double calificacion = atof(campo);
-
-            extraerCampo(linea, "marca_tiempo", campo, sizeof(campo));
-            long marcaTiempo = atol(campo);
-
-            extraerCampo(linea, "seccion",   campo, sizeof(campo));
-            char seccion[2];
-            strcpy(seccion, campo);
+            std::string txId        = extraerCampo(linea, "tx_id");
+            std::string operacion   = extraerCampo(linea, "operacion");
+            std::string idAlumno    = extraerCampo(linea, "id_alumno");
+            std::string actividad   = extraerCampo(linea, "actividad");
+            std::string calificacion= extraerCampo(linea, "calificacion");
+            std::string marcaTiempo = extraerCampo(linea, "marca_tiempo");
+            std::string seccion     = extraerCampo(linea, "seccion"); 
 
             std::cout << "    TX " << numTx << ": [" << txId << "]"
                       << " | " << operacion
                       << " | alumno=" << idAlumno
                       << " | act=" << actividad
                       << " | calif=" << calificacion
-                      << " | t=" << marcaTiempo
-                      << " | seccion=" << seccion
-                      << std::endl;
+                      << " | t=" << marcaTiempo;
+            if (seccion != "?") {
+                std::cout << " | seccion=" << seccion;
+            }
+            std::cout << "\n";
         }
     }
 
-    std::cout << "-------------------------------------" << std::endl;
-    std::cout << std::endl;
-    std::cout << "Total bloques leidos: " << numBloque << std::endl;
+    std::cout << "-------------------------------------\n\n";
+    std::cout << "Total bloques leidos: " << numBloque << "\n";
 
     archivo.close();
     return 0;
