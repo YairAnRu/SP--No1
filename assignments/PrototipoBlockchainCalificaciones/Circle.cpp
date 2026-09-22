@@ -1,5 +1,3 @@
-
-
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -24,7 +22,7 @@ std::string extraerCampo(const std::string& linea, const std::string& clave) {
 }
 
 int main(int argc, char* argv[]) {
-    std::string nombreArchivo = (argc > 1) ? argv[1] : "blockchain.ndjson";
+    std::string nombreArchivo = (argc > 1) ? argv[1] : "blockchain1.ndjson";
 
     std::ifstream archivo(nombreArchivo);
     if (!archivo.is_open()) {
@@ -88,9 +86,9 @@ int main(int argc, char* argv[]) {
 
             std::cout << "    TX " << numTx << ": [" << txId << "]"
                       << " | " << operacion
-                      << " | alumno=" << idAlumno
+                      << " | Usuario=" << idAlumno
                       << " | act=" << actividad
-                      << " | calif=" << calificacion
+                      << " | $" << calificacion
                       << " | t=" << marcaTiempo;
             if (seccion != "?") {
                 std::cout << " | seccion=" << seccion;
