@@ -78,19 +78,17 @@ int main(int argc, char* argv[]) {
 
             std::string txId        = extraerCampo(linea, "tx_id");
             std::string operacion   = extraerCampo(linea, "operacion");
-            std::string idAlumno    = extraerCampo(linea, "id_alumno");
-            std::string calificacion= extraerCampo(linea, "calificacion");
+            std::string idUsuario    = extraerCampo(linea, "id_usuario");
+            std::string monto= extraerCampo(linea, "monto");
             std::string marcaTiempo = extraerCampo(linea, "marca_tiempo");
             std::string seccion     = extraerCampo(linea, "seccion"); 
 
             std::cout << "    TX " << numTx << ": [" << txId << "]"
                       << " | " << operacion
-                      << " | Usuario=" << idAlumno
-                      << " | $" << calificacion
+                      << " | Usuario=" << idUsuario
+                      << " | $" << monto
                       << " | t=" << marcaTiempo;
-            if (seccion != "?") {
-                std::cout << " | seccion=" << seccion;
-            }
+           
             std::cout << "\n";
         }
     }
