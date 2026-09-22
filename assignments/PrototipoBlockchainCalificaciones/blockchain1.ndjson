@@ -1,3 +1,3 @@
 {"tipo":"bloque","height":0,"prev_hash":"0000000000000000","block_hash":"a3f9c2e1b5d84710","tx_count":2,"ejemplo":1}
-  {"tipo":"tx","tx_id":"tx001","operacion":"RETIRO","id_alumno":"A001","actividad":"ACT01","calificacion":2000,"marca_tiempo":1000,"seccion":"BBVA"}
-  {"tipo":"tx","tx_id":"tx002","operacion":"DEPOSITO","id_alumno":"A002","actividad":"ACT01","calificacion":3000,"marca_tiempo":1010,"seccion":"Banamex"}
+  {"tipo":"tx","tx_id":"tx001","operacion":"RETIRO","id_alumno":"A001","calificacion":2000,"marca_tiempo":1000,"seccion":"BBVA"}
+  {"tipo":"tx","tx_id":"tx002","operacion":"DEPOSITO","id_alumno":"A002","calificacion":3000,"marca_tiempo":1010,"seccion":"Banamex"}
