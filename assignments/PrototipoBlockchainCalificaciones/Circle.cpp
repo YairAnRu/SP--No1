@@ -80,8 +80,7 @@ int main(int argc, char* argv[]) {
             std::string operacion   = extraerCampo(linea, "operacion");
             std::string idUsuario    = extraerCampo(linea, "id_usuario");
             std::string monto= extraerCampo(linea, "monto");
-            std::string marcaTiempo = extraerCampo(linea, "marca_tiempo");
-            std::string seccion     = extraerCampo(linea, "seccion"); 
+            std::string marcaTiempo = extraerCampo(linea, "marca_tiempo"); 
 
             std::cout << "    TX " << numTx << ": [" << txId << "]"
                       << " | " << operacion
