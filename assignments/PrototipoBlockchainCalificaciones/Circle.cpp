@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-
+#include <openssl/sha.h>
 
 std::string extraerCampo(const std::string& linea, const std::string& clave) {
     std::string patron = "\"" + clave + "\":";
