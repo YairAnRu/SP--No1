@@ -1,48 +1,20 @@
-#ifndef DARRAY_H
-#define DARRAY_H
 
-template <typename T>
-class DArray {
-    T* datos;
-    int capacidad;
-    int numElementos;
+#ifndef BLOQUE_H
+#define BLOQUE_H
+ 
+#include "EncabezadoBloque.h"
+#include "Transaccion.h"
+#include "DArray.h"
+ 
 
-    void redimensionar() {
-        capacidad *= 2;
-        T* nuevo = new T[capacidad];
-        for (int i = 0; i < numElementos; i++) {
-            nuevo[i] = datos[i];
-        }
-        delete[] datos;
-        datos = nuevo;
-    }
-
-public:
-    DArray() {
-        capacidad = 4;
-        numElementos = 0;
-        datos = new T[capacidad];
-    }
-
-    ~DArray() {
-        delete[] datos;
-    }
-
-    void agregar(T elemento) {
-        if (numElementos == capacidad) {
-            redimensionar();
-        }
-        datos[numElementos] = elemento;
-        numElementos++;
-    }
-
-    int size() {
-        return numElementos;
-    }
-
-    T& operator[](int i) {
-        return datos[i];
+struct Bloque {
+    EncabezadoBloque encabezado;
+    DArray<Transaccion*> txList;
+ 
+    Bloque() {
+        encabezado.height = 0;
+        encabezado.txCount = 0;
     }
 };
-
+ 
 #endif
