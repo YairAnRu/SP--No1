@@ -1,4 +1,3 @@
-
 #ifndef BLOQUE_H
 #define BLOQUE_H
  

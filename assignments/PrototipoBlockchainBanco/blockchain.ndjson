@@ -1,0 +1,13 @@
+{"tipo":"bloque","height":0,"prev_hash":"0000","block_hash":"0000","tx_count":2}
+  {"tipo":"tx","tx_id":"tx_001","operacion":"DEPOSITO","id_usuario":"U001","monto":3500.0,"marca_tiempo":1759590000}
+  {"tipo":"tx","tx_id":"tx_002","operacion":"DEPOSITO","id_usuario":"U002","monto":1200.5,"marca_tiempo":1759590060}
+{"tipo":"bloque","height":1,"prev_hash":"0000","block_hash":"0000","tx_count":3}
+  {"tipo":"tx","tx_id":"tx_003","operacion":"PAGO","id_usuario":"U001","monto":450.75,"marca_tiempo":1759590600}
+  {"tipo":"tx","tx_id":"tx_004","operacion":"RETIRO","id_usuario":"U002","monto":300.0,"marca_tiempo":1759590660}
+  {"tipo":"tx","tx_id":"tx_005","operacion":"DEPOSITO","id_usuario":"U003","monto":8000.0,"marca_tiempo":1759590720}
+{"tipo":"bloque","height":2,"prev_hash":"0000","block_hash":"0000","tx_count":2}
+  {"tipo":"tx","tx_id":"tx_006","operacion":"PAGO","id_usuario":"U003","monto":1299.99,"marca_tiempo":1759591800}
+  {"tipo":"tx","tx_id":"tx_007","operacion":"RETIRO","id_usuario":"U001","monto":1000.0,"marca_tiempo":1759591860}
+{"tipo":"bloque","height":3,"prev_hash":"0000","block_hash":"0000","tx_count":2}
+  {"tipo":"tx","tx_id":"tx_008","operacion":"DEPOSITO","id_usuario":"U004","monto":250.0,"marca_tiempo":1759593000}
+  {"tipo":"tx","tx_id":"tx_009","operacion":"PAGO","id_usuario":"U002","monto":89.9,"marca_tiempo":1759593060}
