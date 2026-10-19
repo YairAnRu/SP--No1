@@ -11,9 +11,8 @@ class Cola{
 private:
     DArray<T> datos;
     int frente;
-    int final;
+    int fin;
     int tamano;
-    int capacidade;
     int capacidad;
 
 public:
@@ -21,7 +20,7 @@ public:
         if (cap <= 0) cap = 5;
         capacidad = cap;
         frente = 0;
-        final = 0;
+        fin = 0;
         tamano = 0;
 
         datos.fijarTamano(capacidad);
@@ -31,8 +30,8 @@ public:
         if (estaLlena()){
             return false;
         }
-        datos.asignarEn(final, elemento);
-        final = (final + 1) % capacidad;
+        datos.asignarEn(fin, elemento);
+        fin = (fin + 1) % capacidad;
         tamano++;
         return true;
     }

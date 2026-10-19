@@ -7,7 +7,7 @@
 
 template <typename T>
 
-class TPila{
+class Pila{
 private:
     DArray<T> datos;
 
@@ -35,7 +35,7 @@ public:
     }
 
     bool estaVacia() const{
-        return datos.size() == 0
+        return datos.size() == 0;
     }
 
     int tamanoActual() const{

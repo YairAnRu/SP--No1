@@ -1,6 +1,11 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <Pila.h>
+#include <ListaEnlazada.h>
+#include <Cola.h>
+#include <Bloque.h>
+
 
 std::string extraerCampo(const std::string& linea, const std::string& clave) {
     std::string patron = "\"" + clave + "\":";
