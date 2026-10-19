@@ -1,12 +1,19 @@
-all: clean compile run
+CXX = g++
+CXXFLAGS = -std=c++11 -Wall -Wextra
+OUT = build/exercise
+
+all: compile run
 
 compile:
-	g++ -std=c++11 -Wall -Wextra *.cpp -o build/exercise
+	$(CXX) $(CXXFLAGS) main.cpp -o $(OUT)
+
 run:
-	build/exercise
+	./$(OUT)
+
+debugvs:
+	$(CXX) -std=c++11 -g main.cpp -o build/dexercise
+
 clean:
-	rm -f build/exercise
-	rm -f build/dexercise
-debug:
-	g++ -std=c++11 *.cpp -g -o build/dexercise
-	gdb build/dexercise
+	$(RM) build/exercise build/dexercise
+
+.PHONY: all compile run debugvs clean
