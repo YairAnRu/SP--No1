@@ -9,6 +9,7 @@
 #include "ListaEnlazada.h"
 #include "Pila.h"
 #include "Cola.h"
+#include "TablaHash.h"
 using std::cout;
 using std::endl;
 
@@ -41,7 +42,8 @@ bool extraerCampo(const char* linea, const char* clave, char* salida, int maxLen
     return true;
 }
 
-bool cargarNDJSON(const char* nombreArchivo, ListaEnlazada<Bloque>& cadena) {
+bool cargarNDJSON(const char* nombreArchivo, ListaEnlazada<Bloque>& cadena,
+                  TablaHash<bool>& txExiste, TablaHash<int>& txLedger) {
     std::ifstream archivo(nombreArchivo);
     if (!archivo.is_open()) {
         std::cerr << "Error: no se pudo abrir '" << nombreArchivo << "'" << endl;
@@ -83,6 +85,8 @@ bool cargarNDJSON(const char* nombreArchivo, ListaEnlazada<Bloque>& cadena) {
             extraerCampo(linea, "marca_tiempo", marca, sizeof(marca));
             actual.txList.agregar(new Transaccion(txId, operacion, idUsuario,
                                                   std::atof(monto), std::atoll(marca)));
+            txExiste.insertar(txId, true);
+            txLedger.insertar(txId, actual.encabezado.height);
         }
     }
     if (hayBloque) {
@@ -249,20 +253,188 @@ void demoTxListEnlazada(ListaEnlazada<Bloque>& cadena) {
          << " | tamano copia (tras eliminar 1) = " << copia.tamanoActual() << endl;
 }
 
+int consultarBloque(TablaHash<int>& txLedger, const char* txId) {
+    int* altura = txLedger.buscar(txId);
+    if (altura == nullptr) return -1;
+    return *altura;
+}
+
+Bloque* buscarBloquePorAltura(ListaEnlazada<Bloque>& cadena, int altura) {
+    Bloque* encontrado = nullptr;
+    cadena.paraCadaMientras([&](Bloque& b) -> bool {
+        if (b.encabezado.height == altura) {
+            encontrado = &b;
+            return false;
+        }
+        return true;
+    });
+    return encontrado;
+}
+
+void mostrarConsulta(ListaEnlazada<Bloque>& cadena, TablaHash<int>& txLedger, const char* txId) {
+    cout << "Consulta por txId: " << txId << endl;
+    int altura = consultarBloque(txLedger, txId);
+    if (altura == -1) {
+        cout << "  [NO ENCONTRADO] el txId " << txId << " no existe en el ledger (consultarBloque devolvio -1)" << endl;
+        return;
+    }
+    cout << "  Altura devuelta por txLedger: " << altura << endl;
+    Bloque* b = buscarBloquePorAltura(cadena, altura);
+    if (b == nullptr) {
+        cout << "  [ERROR] el indice apunta a la altura " << altura << " pero ese bloque no esta en la cadena" << endl;
+        return;
+    }
+    for (int i = 0; i < b->txList.size(); i++) {
+        if (std::strcmp(b->txList[i]->txId, txId) == 0) {
+            cout << "  Transaccion encontrada: ";
+            b->txList[i]->imprimir();
+        }
+    }
+    cout << "  Bloque donde esta almacenada:" << endl;
+    imprimirBloque(*b);
+}
+
+bool encolarSinDuplicado(Cola<Transaccion*>& mempool, Transaccion* t, TablaHash<bool>& txExiste) {
+    bool* existe = txExiste.buscar(t->txId);
+    if (existe != nullptr && *existe) {
+        cout << "  [ERROR] txId duplicado: " << t->txId << " — transacción rechazada" << endl;
+        return false;
+    }
+    if (!mempool.encolar(t)) {
+        cout << "  [ERROR] mempool llena: " << t->txId << " no se pudo encolar" << endl;
+        return false;
+    }
+    cout << "  txId " << t->txId << " no existe en el indice -> encolada (mempool " << mempool.tamanoActual()
+         << "/" << mempool.capacidadActual() << ")" << endl;
+    return true;
+}
+
+void demoDuplicados(TablaHash<bool>& txExiste) {
+    titulo("5) Indice 1: deteccion de duplicados (txExiste)");
+
+    Cola<Transaccion*> mempool(5);
+    Transaccion* intentos[3];
+    intentos[0] = new Transaccion("tx_003", "PAGO", "U001", 450.75, 1759590600);
+    intentos[1] = new Transaccion("tx_008", "RETIRO", "U999", 99999.0, 1759700000);
+    intentos[2] = new Transaccion("tx_301", "DEPOSITO", "U007", 640.0, 1759700100);
+
+    cout << "\n[a] Reenvio de una transaccion que ya esta en el NDJSON (tx_003):" << endl;
+    cout << "  Intento: ";
+    intentos[0]->imprimir();
+    encolarSinDuplicado(mempool, intentos[0], txExiste);
+
+    cout << "\n[b] Transaccion inventada que reutiliza un txId existente (tx_008):" << endl;
+    cout << "  Intento: ";
+    intentos[1]->imprimir();
+    encolarSinDuplicado(mempool, intentos[1], txExiste);
+
+    cout << "\n[c] Transaccion nueva con txId que no existe (tx_301):" << endl;
+    cout << "  Intento: ";
+    intentos[2]->imprimir();
+    encolarSinDuplicado(mempool, intentos[2], txExiste);
+
+    cout << "\n  Transacciones en la mempool al final: " << mempool.tamanoActual() << endl;
+
+    while (!mempool.estaVacia()) mempool.desencolar();
+    for (int i = 0; i < 3; i++) delete intentos[i];
+}
+
+void demoConsultas(ListaEnlazada<Bloque>& cadena, TablaHash<int>& txLedger) {
+    titulo("6) Indice 2: consultarBloque(txId) (txLedger)");
+
+    cout << "\n[a] txId que existe:" << endl;
+    mostrarConsulta(cadena, txLedger, "tx_005");
+
+    cout << "\n[b] Otro txId que existe (en el tip):" << endl;
+    mostrarConsulta(cadena, txLedger, "tx_009");
+
+    cout << "\n[c] txId que no existe:" << endl;
+    mostrarConsulta(cadena, txLedger, "tx_999");
+}
+
+void demoFlujoCompleto(ListaEnlazada<Bloque>& cadena, TablaHash<bool>& txExiste, TablaHash<int>& txLedger) {
+    titulo("7) Flujo completo: Mempool -> bloque -> indices");
+
+    Cola<Transaccion*> mempool(5);
+
+    cout << "\n[1] Se crea una transaccion nueva con txId unico:" << endl;
+    Transaccion* nueva = new Transaccion("tx_401", "PAGO", "U002", 275.5, 1759800000);
+    cout << "  ";
+    nueva->imprimir();
+
+    cout << "\n[2] Se verifica en txExiste y se encola en la Mempool:" << endl;
+    if (!encolarSinDuplicado(mempool, nueva, txExiste)) {
+        delete nueva;
+        return;
+    }
+
+    cout << "\n[3] Confirmacion: el lider mueve las transacciones de la Mempool a un bloque nuevo:" << endl;
+    int alturaTip = cadena.estaVacia() ? -1 : cadena.obtenerEn(0).encabezado.height;
+    Bloque nuevoBloque;
+    nuevoBloque.encabezado.height = alturaTip + 1;
+    while (!mempool.estaVacia()) {
+        Transaccion* t = mempool.frenteActual();
+        mempool.desencolar();
+        nuevoBloque.txList.agregar(t);
+    }
+    nuevoBloque.encabezado.txCount = nuevoBloque.txList.size();
+    cadena.agregarInicio(nuevoBloque);
+    cout << "  Bloque #" << nuevoBloque.encabezado.height << " agregado a la cadena con "
+         << nuevoBloque.encabezado.txCount << " transaccion(es). Mempool: " << mempool.tamanoActual() << endl;
+
+    cout << "\n[4] Se insertan los txId del bloque en ambas tablas:" << endl;
+    for (int i = 0; i < nuevoBloque.txList.size(); i++) {
+        const char* id = nuevoBloque.txList[i]->txId;
+        txExiste.insertar(id, true);
+        txLedger.insertar(id, nuevoBloque.encabezado.height);
+        cout << "  txExiste[" << id << "] = true | txLedger[" << id << "] = " << nuevoBloque.encabezado.height << endl;
+    }
+
+    cout << "\n[5] Verificacion con consultarBloque:" << endl;
+    mostrarConsulta(cadena, txLedger, "tx_401");
+
+    cout << "\n[6] Si la misma transaccion se vuelve a enviar, ahora es duplicado:" << endl;
+    Transaccion* repetida = new Transaccion("tx_401", "PAGO", "U002", 275.5, 1759800000);
+    encolarSinDuplicado(mempool, repetida, txExiste);
+    delete repetida;
+}
+
 int main(int argc, char* argv[]) {
     const char* archivo = (argc > 1) ? argv[1] : "blockchain.ndjson";
 
-    titulo("1) Carga del NDJSON (tip -> genesis)");
+    titulo("1) Carga del NDJSON y construccion de indices (tip -> genesis)");
     ListaEnlazada<Bloque> cadena;
-    if (!cargarNDJSON(archivo, cadena)) return 1;
+    TablaHash<bool> txExiste;
+    TablaHash<int> txLedger;
+    if (!cargarNDJSON(archivo, cadena, txExiste, txLedger)) return 1;
     cout << "Bloques cargados: " << cadena.tamanoActual() << "\n" << endl;
     cadena.paraCada(imprimirBloque);
+
+    int totalTx = 0;
+    cadena.paraCada([&](Bloque& b) { totalTx += b.txList.size(); });
+    cout << "\nIndexadas: " << txExiste.tamano() << " de " << totalTx << " transacciones en "
+         << cadena.tamanoActual() << " bloques (txExiste: " << txExiste.tamano()
+         << " claves | txLedger: " << txLedger.tamano() << " claves)" << endl;
+    if (txExiste.tamano() != totalTx) {
+        cout << "[AVISO] hay txId repetidos en el archivo NDJSON" << endl;
+    }
 
     int alturaTip = cadena.estaVacia() ? -1 : cadena.obtenerEn(0).encabezado.height;
 
     demoMempool(alturaTip);
     demoRollback(cadena);
     if (!cadena.estaVacia()) demoTxListEnlazada(cadena);
+
+    demoDuplicados(txExiste);
+    demoConsultas(cadena, txLedger);
+    demoFlujoCompleto(cadena, txExiste, txLedger);
+
+    titulo("8) Resumen de los indices");
+    cout << "Bloques en la cadena: " << cadena.tamanoActual() << endl;
+    cout << "txExiste : " << txExiste.tamano() << " claves | capacidad " << txExiste.capacidad()
+         << " | factor de carga " << txExiste.factorCarga() << endl;
+    cout << "txLedger : " << txLedger.tamano() << " claves | capacidad " << txLedger.capacidad()
+         << " | factor de carga " << txLedger.factorCarga() << endl;
 
     liberarTransacciones(cadena);
     cout << "\nFin del programa." << endl;
