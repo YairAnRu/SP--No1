@@ -126,7 +126,47 @@ void titulo(const char* texto) {
     cout << "=====================================" << endl;
 }
 
-void demoMempool(int alturaTip) {
+void escribirNumero(char* destino, long long valor, int digitos) {
+    for (int i = digitos - 1; i >= 0; i--) {
+        destino[i] = (char)('0' + valor % 10);
+        valor /= 10;
+    }
+}
+
+void generarTxId(char* destino, int capacidad, const char* nodo, int secuencia, long long marcaTiempo) {
+    char marca[24];
+    int nDigitos = 0;
+    long long m = marcaTiempo;
+    if (m <= 0) marca[nDigitos++] = '0';
+    while (m > 0) {
+        marca[nDigitos++] = (char)('0' + m % 10);
+        m /= 10;
+    }
+    int largoNodo = (int)std::strlen(nodo);
+    int total = largoNodo + 1 + 5 + 1 + nDigitos;
+    if (total + 1 > capacidad) {
+        destino[0] = '\0';
+        return;
+    }
+    int pos = 0;
+    for (int i = 0; i < largoNodo; i++) destino[pos++] = nodo[i];
+    destino[pos++] = '-';
+    escribirNumero(destino + pos, secuencia, 5);
+    pos += 5;
+    destino[pos++] = '-';
+    for (int i = nDigitos - 1; i >= 0; i--) destino[pos++] = marca[i];
+    destino[pos] = '\0';
+}
+
+Transaccion* crearTransaccion(int& secuencia, const char* operacion, const char* usuario,
+                              double monto, long long marcaTiempo) {
+    char id[64];
+    secuencia++;
+    generarTxId(id, sizeof(id), "NOD001", secuencia, marcaTiempo);
+    return new Transaccion(id, operacion, usuario, monto, marcaTiempo);
+}
+
+void demoMempool(int alturaTip, int& secuencia) {
     titulo("2) Mempool (Cola circular, capacidad 5)");
 
     const int CAPACIDAD = 5;
@@ -134,15 +174,15 @@ void demoMempool(int alturaTip) {
     Cola<Transaccion*> mempool(CAPACIDAD);
 
     Transaccion* creadas[TOTAL];
-    creadas[0] = new Transaccion("tx_101", "DEPOSITO", "U005", 1500.0, 1759600000);
-    creadas[1] = new Transaccion("tx_102", "PAGO",     "U001",  320.5, 1759600010);
-    creadas[2] = new Transaccion("tx_103", "RETIRO",   "U003",  800.0, 1759600020);
-    creadas[3] = new Transaccion("tx_104", "PAGO",     "U004",   75.0, 1759600030);
-    creadas[4] = new Transaccion("tx_105", "DEPOSITO", "U002", 2200.0, 1759600040);
-    creadas[5] = new Transaccion("tx_106", "PAGO",     "U005",  199.9, 1759600050);
-    creadas[6] = new Transaccion("tx_107", "RETIRO",   "U001",  500.0, 1759600060);
-    creadas[7] = new Transaccion("tx_108", "DEPOSITO", "U006",  950.0, 1759600070);
-    creadas[8] = new Transaccion("tx_109", "PAGO",     "U003",  410.0, 1759600080);
+    creadas[0] = crearTransaccion(secuencia, "DEPOSITO", "U005", 1500.0, 1759600000);
+    creadas[1] = crearTransaccion(secuencia, "PAGO",     "U001",  320.5, 1759600010);
+    creadas[2] = crearTransaccion(secuencia, "RETIRO",   "U003",  800.0, 1759600020);
+    creadas[3] = crearTransaccion(secuencia, "PAGO",     "U004",   75.0, 1759600030);
+    creadas[4] = crearTransaccion(secuencia, "DEPOSITO", "U002", 2200.0, 1759600040);
+    creadas[5] = crearTransaccion(secuencia, "PAGO",     "U005",  199.9, 1759600050);
+    creadas[6] = crearTransaccion(secuencia, "RETIRO",   "U001",  500.0, 1759600060);
+    creadas[7] = crearTransaccion(secuencia, "DEPOSITO", "U006",  950.0, 1759600070);
+    creadas[8] = crearTransaccion(secuencia, "PAGO",     "U003",  410.0, 1759600080);
 
     cout << "\n[a] Encolando 5 transacciones:" << endl;
     for (int i = 0; i < 5; i++) {
@@ -309,26 +349,30 @@ bool encolarSinDuplicado(Cola<Transaccion*>& mempool, Transaccion* t, TablaHash<
     return true;
 }
 
-void demoDuplicados(TablaHash<bool>& txExiste) {
+void demoDuplicados(TablaHash<bool>& txExiste, int& secuencia) {
     titulo("5) Indice 1: deteccion de duplicados (txExiste)");
 
     Cola<Transaccion*> mempool(5);
     Transaccion* intentos[3];
-    intentos[0] = new Transaccion("tx_003", "PAGO", "U001", 450.75, 1759590600);
-    intentos[1] = new Transaccion("tx_008", "RETIRO", "U999", 99999.0, 1759700000);
-    intentos[2] = new Transaccion("tx_301", "DEPOSITO", "U007", 640.0, 1759700100);
+    char idReenvio[64];
+    char idInventada[64];
+    generarTxId(idReenvio, sizeof(idReenvio), "NOD001", 3, 1759590600);
+    generarTxId(idInventada, sizeof(idInventada), "NOD001", 8, 1759593000);
+    intentos[0] = new Transaccion(idReenvio, "PAGO", "U001", 450.75, 1759590600);
+    intentos[1] = new Transaccion(idInventada, "RETIRO", "U999", 99999.0, 1759700000);
+    intentos[2] = crearTransaccion(secuencia, "DEPOSITO", "U007", 640.0, 1759700100);
 
-    cout << "\n[a] Reenvio de una transaccion que ya esta en el NDJSON (tx_003):" << endl;
+    cout << "\n[a] Reenvio de una transaccion que ya esta en el NDJSON (" << intentos[0]->txId << "):" << endl;
     cout << "  Intento: ";
     intentos[0]->imprimir();
     encolarSinDuplicado(mempool, intentos[0], txExiste);
 
-    cout << "\n[b] Transaccion inventada que reutiliza un txId existente (tx_008):" << endl;
+    cout << "\n[b] Transaccion inventada que reutiliza un txId existente (" << intentos[1]->txId << "):" << endl;
     cout << "  Intento: ";
     intentos[1]->imprimir();
     encolarSinDuplicado(mempool, intentos[1], txExiste);
 
-    cout << "\n[c] Transaccion nueva con txId que no existe (tx_301):" << endl;
+    cout << "\n[c] Transaccion nueva con txId que no existe (" << intentos[2]->txId << "):" << endl;
     cout << "  Intento: ";
     intentos[2]->imprimir();
     encolarSinDuplicado(mempool, intentos[2], txExiste);
@@ -343,22 +387,22 @@ void demoConsultas(ListaEnlazada<Bloque>& cadena, TablaHash<int>& txLedger) {
     titulo("6) Indice 2: consultarBloque(txId) (txLedger)");
 
     cout << "\n[a] txId que existe:" << endl;
-    mostrarConsulta(cadena, txLedger, "tx_005");
+    mostrarConsulta(cadena, txLedger, "NOD001-00005-1759590720");
 
     cout << "\n[b] Otro txId que existe (en el tip):" << endl;
-    mostrarConsulta(cadena, txLedger, "tx_009");
+    mostrarConsulta(cadena, txLedger, "NOD001-00009-1759593060");
 
     cout << "\n[c] txId que no existe:" << endl;
-    mostrarConsulta(cadena, txLedger, "tx_999");
+    mostrarConsulta(cadena, txLedger, "NOD001-99999-1759999999");
 }
 
-void demoFlujoCompleto(ListaEnlazada<Bloque>& cadena, TablaHash<bool>& txExiste, TablaHash<int>& txLedger) {
+void demoFlujoCompleto(ListaEnlazada<Bloque>& cadena, TablaHash<bool>& txExiste, TablaHash<int>& txLedger, int& secuencia) {
     titulo("7) Flujo completo: Mempool -> bloque -> indices");
 
     Cola<Transaccion*> mempool(5);
 
     cout << "\n[1] Se crea una transaccion nueva con txId unico:" << endl;
-    Transaccion* nueva = new Transaccion("tx_401", "PAGO", "U002", 275.5, 1759800000);
+    Transaccion* nueva = crearTransaccion(secuencia, "PAGO", "U002", 275.5, 1759800000);
     cout << "  ";
     nueva->imprimir();
 
@@ -391,10 +435,10 @@ void demoFlujoCompleto(ListaEnlazada<Bloque>& cadena, TablaHash<bool>& txExiste,
     }
 
     cout << "\n[5] Verificacion con consultarBloque:" << endl;
-    mostrarConsulta(cadena, txLedger, "tx_401");
+    mostrarConsulta(cadena, txLedger, nueva->txId);
 
     cout << "\n[6] Si la misma transaccion se vuelve a enviar, ahora es duplicado:" << endl;
-    Transaccion* repetida = new Transaccion("tx_401", "PAGO", "U002", 275.5, 1759800000);
+    Transaccion* repetida = new Transaccion(nueva->txId, "PAGO", "U002", 275.5, 1759800000);
     encolarSinDuplicado(mempool, repetida, txExiste);
     delete repetida;
 }
@@ -420,14 +464,15 @@ int main(int argc, char* argv[]) {
     }
 
     int alturaTip = cadena.estaVacia() ? -1 : cadena.obtenerEn(0).encabezado.height;
+    int secuencia = totalTx;
 
-    demoMempool(alturaTip);
+    demoMempool(alturaTip, secuencia);
     demoRollback(cadena);
     if (!cadena.estaVacia()) demoTxListEnlazada(cadena);
 
-    demoDuplicados(txExiste);
+    demoDuplicados(txExiste, secuencia);
     demoConsultas(cadena, txLedger);
-    demoFlujoCompleto(cadena, txExiste, txLedger);
+    demoFlujoCompleto(cadena, txExiste, txLedger, secuencia);
 
     titulo("8) Resumen de los indices");
     cout << "Bloques en la cadena: " << cadena.tamanoActual() << endl;
